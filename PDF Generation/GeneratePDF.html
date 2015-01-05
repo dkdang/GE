@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PDF</title>
+    <script type="text/javascript" src="base64.js"></script>
+    <script type="text/javascript" src="sprintf.js"></script>
+    <script type="text/javascript" src="jspdf.js"></script>
+    <script type="text/javascript" src="verivo.js"></script>
+    <script type="text/javascript">
+        var DealName, Amount, ExpClose, Probability, Status, PrimaryContact, PrimPhone;
+        var callbackCount = 0;
+        var timerAction = 0;
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        function onDeviceReady() {
+        }
+
+        function openfile(filePath){
+            cordova.exec(function(success) {} , function(err) {alert('fail');}, "ExternalFileUtil", "openWith", [filePath, "com.adobe.pdf"]);
+        }
+
+        function myset(data){
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+                fileSystem.root.getFile("example.pdf", {create: true, exclusive: false}, function(fileEntry) {
+                    cordova.exec(function(success) {openfile(fileEntry.fullPath); } , function(err) {alert('failure');}, "BinaryFileWriter", "writeToFile", [fileEntry.fullPath, data]);
+                }, function(inp) {});
+            }, function(inp) {});
+        }
+
+        function CreatePDF() {
+            var pdf = new jsPDF();
+
+            pdf.setFontSize(16);
+
+            pdf.text(20, 40, 'Deal Name:');
+            pdf.text(80, 40, DealName );
+
+            pdf.text(20, 60, 'Amount:');
+            pdf.text(80, 60, Amount);
+
+            pdf.text(20, 80, 'Expected Close:');
+            pdf.text(80, 80, ExpClose);
+
+            pdf.text(20, 100, 'Probability:');
+            pdf.text(80, 100, Probability);
+
+            pdf.text(20, 120, 'Status:');
+            pdf.text(80, 120, Status);
+
+            pdf.text(20, 140, 'Primary Contact:');
+            pdf.text(80, 140, PrimaryContact);
+
+            pdf.text(20, 160, 'Primary Phone:');
+            pdf.text(80, 160, PrimPhone);
+
+            return pdf;
+        }
+
+        function process() {
+            var pdf;
+            pdf = CreatePDF();
+
+            var PDFContentBase64 = "";
+            PDFContentBase64 = Base64.encode(pdf.output());
+            myset(PDFContentBase64);
+        }
+
+
+        function ProcessPDF() {
+            callbackCount = 0;
+            clearTimeout(timerAction);
+            verivo.getDisplayValue(function (value) {
+                DealName = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "DealName");
+            verivo.getDisplayValue(function (value) {
+                Amount = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "Amount");
+            verivo.getDisplayValue(function (value) {
+                ExpClose = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "ExpClose");
+            verivo.getDisplayValue(function (value) {
+                Probability = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "Probability");
+            verivo.getDisplayValue(function (value) {
+                Status = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "Status");
+            verivo.getDisplayValue(function (value) {
+                PrimaryContact = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "PrimaryContact");
+            verivo.getDisplayValue(function (value) {
+                PrimPhone = value;
+                callbackCount++;
+            }, onError, "Deals_Summary_Scr", "Deals_Summary_Vw", "PrimPhone");
+            timerAction = setTimeout("ContinueProcessPDF()", 100);
+        }
+
+        function onError(Error) {
+            alert("Error = " + Error.code);
+        }
+
+        function ContinueProcessPDF() {
+            if (callbackCount != 7) {
+                //Return from this method if not all callbacks are returned. This API will be called again when the timer fires
+                return;
+            }
+            //Continue to save once after all callbacks have returned
+
+            callbackCount = 0;
+            //Disable the timer
+            clearTimeout(timerAction);
+            process();
+        }
+
+    </script>
+</head>
+
+<body>
+</body>
+</html>

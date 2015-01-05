@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PDF</title>
+    <script type="text/javascript" src="base64.js"></script>
+    <script type="text/javascript" src="sprintf.js"></script>
+    <script type="text/javascript" src="jspdf.js"></script>
+    <script type="text/javascript" src="verivo.js"></script>
+    <script type="text/javascript">
+        var ActivityNumber, SRNumber;
+        var callbackCount = 0;
+        var timerAction = 0;
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        function onDeviceReady() {
+            GetData();
+        }
+
+        function openfile(filePath){
+            cordova.exec(function(success) {} , function(err) {alert('fail');}, "ExternalFileUtil", "openWith", [filePath, "com.adobe.pdf"]);
+        }
+
+        function myset(data){
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+                fileSystem.root.getFile("example.pdf", {create: true, exclusive: false}, function(fileEntry) {
+                    cordova.exec(function(success) {openfile(fileEntry.fullPath); } , function(err) {alert('failure');}, "BinaryFileWriter", "writeToFile", [fileEntry.fullPath, data]);
+                }, function(inp) {});
+            }, function(inp) {});
+        }
+
+        function CreatePDF() {
+            var pdf = new jsPDF();
+
+            pdf.setFontSize(16);
+
+            pdf.text(20, 40, 'Activity Number:');
+            pdf.text(80, 40, ActivityNumber );
+
+            pdf.text(20, 60, 'SR Number:');
+            pdf.text(80, 60, SRNumber);
+
+            return pdf;
+        }
+
+        function process() {
+            var pdf;
+            pdf = CreatePDF();
+
+            var PDFContentBase64 = "";
+            PDFContentBase64 = Base64.encode(pdf.output());
+            myset(PDFContentBase64);
+        }
+
+        function onError(Error) {
+            alert("Error = " + Error.code);
+        }
+
+        function GetData() {
+            callbackCount = 0;
+            clearTimeout(timerAction);
+            verivo.getDisplayValue(function (value) {
+                ActivityNumber = value;
+                callbackCount++;
+            }, onError, "Generate PDF", "Generate PDF", "ActivityNumber");
+
+            verivo.getDisplayValue(function (value) {
+                SRNumber = value;
+                callbackCount++;
+            }, onError, "Generate PDF", "Generate PDF", "SRNumber");
+
+            timerAction = setTimeout("VerifyData()", 100);
+        }
+
+        function VerifyData() {
+            if (callbackCount != 2) {
+                //Return from this method if not all callbacks are returned. This API will be called again when the timer fires
+                return;
+            }
+            //Continue to save once after all callbacks have returned
+
+            callbackCount = 0;
+            //Disable the timer
+            clearTimeout(timerAction);
+            process();
+        }
+    </script>
+</head>
+
+<body>
+</body>
+</html>
